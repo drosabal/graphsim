@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     Graph *graph = new Graph();
     int64_t build_time;
     int64_t run_time;
-    ofstream outputFile;
+    ofstream output_file;
 
     auto t1 = chrono::high_resolution_clock::now();
     if (graph_type == "cycle") {
@@ -52,19 +52,20 @@ int main(int argc, char *argv[]) {
     auto t2 = chrono::high_resolution_clock::now();
     build_time = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
-    outputFile.open("output.txt");
+    output_file.open("output.txt");
+    ostream &output = cout;
     if (graph_algorithm == "components") {
         vector<vector<int>> components = graph->connected_components();
         auto t3 = chrono::high_resolution_clock::now();
         run_time = chrono::duration_cast<chrono::milliseconds>(t3 - t2).count();
         for (const vector<int> &component : components) {
-            print_verts(component, outputFile);
+            print_verts(component, output);
         }
     } else if (graph_algorithm == "cycle") {
         vector<int> cycle = graph->one_cycle();
         auto t3 = chrono::high_resolution_clock::now();
         run_time = chrono::duration_cast<chrono::milliseconds>(t3 - t2).count();
-        print_verts(cycle, outputFile);
+        print_verts(cycle, output);
     } else if (graph_algorithm == "paths") {
         map<int, map<int, vector<int>>> all_paths = graph->shortest_paths();
         auto t3 = chrono::high_resolution_clock::now();
@@ -73,11 +74,11 @@ int main(int argc, char *argv[]) {
             const map<int, vector<int>> &paths = p1.second;
             for (const auto &p2 : paths) {
                 const vector<int> &path = p2.second;
-                print_verts(path, outputFile);
+                print_verts(path, output);
             }
         }
     }
-    outputFile.close();
+    output_file.close();
     delete graph;
 
     cout << "Graph build time: " << build_time << "ms" << endl;
