@@ -5,6 +5,7 @@
 #include <stack>
 #include <queue>
 #include <unordered_set>
+#include <utility>
 #include <algorithm>
 #include <climits>
 
@@ -13,29 +14,39 @@ using namespace std;
 class Graph {
 
 private:
-    map<int, vector<int>> adj;
+    map<int, vector<pair<int, double>>> adj;
+    vector<pair<double, double>> coords;
 
     void dfs_component(int start, unordered_set<int> &visited, vector<int> &component);
     void dfs_cycle(int start, unordered_set<int> &visited, vector<int> &cycle);
 
 public:
     void add_vertex(int v);
-    void add_edge(int u, int v);
+    void add_edge(int u, int v, double w);
+    void add_coords(double x, double y);
+    pair<double, double> get_coords(int v);
     vector<vector<int>> connected_components();
     vector<int> one_cycle();
-    map<int, map<int, vector<int>>> shortest_paths();
+    map<int, vector<int>> shortest_paths(int source);
+    map<int, map<int, vector<int>>> all_shortest_paths();
+    pair<int, int> closest_pair();
 
 };
 
 void Graph::add_vertex(int v) {
-    adj.emplace(v, vector<int>());
+    adj.emplace(v, vector<pair<int, double>>());
 }
 
-void Graph::add_edge(int u, int v) {
-    adj[u].push_back(v);
-    if (u != v) {
-        adj[v].push_back(u);
-    }
+void Graph::add_edge(int u, int v, double w) {
+    adj[u].push_back({v, w});
+}
+
+void Graph::add_coords(double x, double y) {
+    coords.push_back({x, y});
+}
+
+pair<double, double> Graph::get_coords(int v) {
+    return coords[v];
 }
 
 vector<vector<int>> Graph::connected_components() {
@@ -60,7 +71,7 @@ void Graph::dfs_component(int start, unordered_set<int> &visited, vector<int> &c
         int v = stk.top();
         stk.pop();
         component.push_back(v);
-        for (int nei : adj[v]) {
+        for (auto [nei, w] : adj[v]) {
             if (visited.find(nei) == visited.end()) {
                 stk.push(nei);
                 visited.insert(nei);
@@ -100,11 +111,11 @@ void Graph::dfs_cycle(int start, unordered_set<int> &visited, vector<int> &cycle
 
     while (!stk.empty()) {
         Frame &f = stk.top();
-        const vector<int> &neighbors = adj[f.vertex];
+        const vector<pair<int, double>> &neighbors = adj[f.vertex];
         bool pushed = false;
 
         for (; f.nextNei < neighbors.size(); f.nextNei++) {
-            int nei = neighbors[f.nextNei];
+            int nei = neighbors[f.nextNei].first;
 
             if (nei == f.parent) {
                 continue;
@@ -137,7 +148,11 @@ void Graph::dfs_cycle(int start, unordered_set<int> &visited, vector<int> &cycle
     }
 }
 
-map<int, map<int, vector<int>>> Graph::shortest_paths() {
+map<int, vector<int>> Graph::shortest_paths(int source) {
+    return {};
+}
+
+map<int, map<int, vector<int>>> Graph::all_shortest_paths() {
     map<int, map<int, vector<int>>> all_paths;
     vector<int> verts;
     for (auto& p : adj) {
@@ -167,7 +182,7 @@ map<int, map<int, vector<int>>> Graph::shortest_paths() {
             if (d > dist[u]) {
                 continue;
             }
-            for (int nei : adj[u]) {
+            for (auto [nei, w] : adj[u]) {
                 long long nd = d + 1;
                 if (nd < dist[nei]) {
                     dist[nei] = nd;
@@ -198,4 +213,8 @@ map<int, map<int, vector<int>>> Graph::shortest_paths() {
     }
 
     return all_paths;
+}
+
+pair<int, int> Graph::closest_pair() {
+    return {};
 }
