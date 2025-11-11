@@ -6,8 +6,10 @@
 #include <queue>
 #include <unordered_set>
 #include <utility>
+#include <functional>
 #include <algorithm>
 #include <limits>
+#include <cmath>
 
 using namespace std;
 
@@ -273,5 +275,104 @@ map<int, map<int, vector<int>>> Graph::all_shortest_paths() {
 }
 
 pair<int, int> Graph::closest_pair() {
-    return {};
+    int n = coords.size();
+    if (n < 2) {
+        return {-1, -1};
+    }
+
+    // Create a vector of indices and sort by x-coordinate
+    vector<int> idx(n);
+    for (int i = 0; i < n; ++i) {
+        idx[i] = i;
+    }
+
+    sort(idx.begin(), idx.end(), [&](int a, int b) {
+        return (
+            coords[a].first < coords[b].first
+            || (coords[a].first == coords[b].first && coords[a].second < coords[b].second)
+        );
+    });
+
+    // Helper function to compute squared distance
+    auto dist_sq = [&](int i, int j) -> double {
+        double dx = coords[i].first - coords[j].first;
+        double dy = coords[i].second - coords[j].second;
+        return dx * dx + dy * dy;
+    };
+
+    // Recursive function
+    function<pair<int, int>(int, int)> closest_util = [&](int left, int right) -> pair<int, int> {
+        if (right - left <= 3) {
+            // Brute force for small subsets
+            pair<int, int> best = {-1, -1};
+            double min_dist = numeric_limits<double>::max();
+            for (int i = left; i < right; i++) {
+                for (int j = i + 1; j < right; j++) {
+                    double d = dist_sq(idx[i], idx[j]);
+                    if (d < min_dist) {
+                        min_dist = d;
+                        best = {idx[i], idx[j]};
+                    }
+                }
+            }
+            return best;
+        }
+
+        int mid = (left + right) / 2;
+        int mid_idx = idx[mid];
+
+        auto dl = closest_util(left, mid);
+        auto dr = closest_util(mid, right);
+
+        double d1 = (dl.first == -1) ? numeric_limits<double>::max() : dist_sq(dl.first, dl.second);
+        double d2 = (dr.first == -1) ? numeric_limits<double>::max() : dist_sq(dr.first, dr.second);
+        double delta = min(d1, d2);
+        pair<int, int> best = (d1 < d2) ? dl : dr;
+
+        // Build strip around mid point
+        vector<int> strip;
+        for (int i = left; i < right; i++) {
+            double dx = coords[idx[i]].first - coords[mid_idx].first;
+            if (dx * dx < delta) {
+                strip.push_back(idx[i]);
+            }
+        }
+
+        // Sort strip by y-coordinate
+        sort(strip.begin(), strip.end(), [&](int a, int b) {
+            return coords[a].second < coords[b].second;
+        });
+
+        // Check strip for closer pairs
+        for (int i = 0; i < strip.size(); i++) {
+            for (
+                int j = i + 1;
+                (
+                    j < strip.size()
+                    && (
+                        (coords[strip[j]].second - coords[strip[i]].second)
+                        * (coords[strip[j]].second - coords[strip[i]].second)
+                        < delta
+                    )
+                );
+                j++
+            ) {
+                double d = dist_sq(strip[i], strip[j]);
+                if (d < delta) {
+                    delta = d;
+                    best = {strip[i], strip[j]};
+                }
+            }
+        }
+
+        return best;
+    };
+
+    auto result = closest_util(0, n);
+
+    // Return indices in sorted order (smaller index first)
+    if (result.first > result.second) {
+        swap(result.first, result.second);
+    }
+    return result;
 }
