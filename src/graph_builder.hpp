@@ -81,6 +81,7 @@ namespace graph_builder {
             graph->add_vertex(i);
             graph->add_coords(x, y);
         }
+        /*
         for (int i = 0; i < n; i++) {
             for (int j = i + 1; j < n; j++) {
                 auto [x1, y1] = graph->get_coords(i);
@@ -90,6 +91,7 @@ namespace graph_builder {
                 graph->add_edge(j, i, w);
             }
         }
+        */
     }
 
 }
