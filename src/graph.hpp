@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <utility>
 #include <algorithm>
-#include <climits>
+#include <limits>
 
 using namespace std;
 
@@ -27,7 +27,7 @@ public:
     pair<double, double> get_coords(int v);
     vector<vector<int>> connected_components();
     vector<int> one_cycle();
-    map<int, vector<int>> shortest_paths(int source);
+    map<int, vector<int>> shortest_paths(int s);
     map<int, map<int, vector<int>>> all_shortest_paths();
     pair<int, int> closest_pair();
 
@@ -148,33 +148,90 @@ void Graph::dfs_cycle(int start, unordered_set<int> &visited, vector<int> &cycle
     }
 }
 
-map<int, vector<int>> Graph::shortest_paths(int source) {
-    return {};
+map<int, vector<int>> Graph::shortest_paths(int s) {
+    map<int, vector<int>> paths;
+    vector<int> verts;
+    for (auto &p : adj) {
+        verts.push_back(p.first);
+    }
+
+    const double INF = numeric_limits<double>::infinity();
+
+    map<int, double> dist;
+    map<int, int> prev;
+    for (int v : verts) {
+        dist[v] = INF;
+    }
+    dist[s] = 0.0;
+
+    priority_queue<
+        pair<double, int>,
+        vector<pair<double, int>>,
+        greater<pair<double, int>>
+    > pq;
+    pq.push({0.0, s});
+
+    while (!pq.empty()) {
+        auto [d, u] = pq.top();
+        pq.pop();
+        if (d > dist[u]) {
+            continue;
+        }
+        for (auto [nei, w] : adj[u]) {
+            double nd = d + w;
+            if (nd < dist[nei]) {
+                dist[nei] = nd;
+                prev[nei] = u;
+                pq.push({nd, nei});
+            }
+        }
+    }
+
+    for (int t : verts) {
+        if (dist[t] < INF) {
+            vector<int> path;
+            int cur = t;
+            while (true) {
+                path.push_back(cur);
+                if (cur == s) {
+                    break;
+                }
+                if (prev.find(cur) == prev.end()) {
+                    break;
+                }
+                cur = prev[cur];
+            }
+            //reverse(path.begin(), path.end());
+            paths[t] = path;
+        }
+    }
+
+    return paths;
 }
 
 map<int, map<int, vector<int>>> Graph::all_shortest_paths() {
     map<int, map<int, vector<int>>> all_paths;
     vector<int> verts;
-    for (auto& p : adj) {
+    for (auto &p : adj) {
         verts.push_back(p.first);
     }
 
-    const long long INF = LLONG_MAX / 2;
+    const double INF = numeric_limits<double>::infinity();
 
     for (int s : verts) {
-        map<int, long long> dist;
+        map<int, double> dist;
         map<int, int> prev;
         for (int v : verts) {
             dist[v] = INF;
         }
-        dist[s] = 0;
+        dist[s] = 0.0;
 
         priority_queue<
-            pair<long long, int>,
-            vector<pair<long long, int>>,
-            greater<pair<long long, int>>
+            pair<double, int>,
+            vector<pair<double, int>>,
+            greater<pair<double, int>>
         > pq;
-        pq.push({0, s});
+        pq.push({0.0, s});
 
         while (!pq.empty()) {
             auto [d, u] = pq.top();
@@ -183,7 +240,7 @@ map<int, map<int, vector<int>>> Graph::all_shortest_paths() {
                 continue;
             }
             for (auto [nei, w] : adj[u]) {
-                long long nd = d + 1;
+                double nd = d + w;
                 if (nd < dist[nei]) {
                     dist[nei] = nd;
                     prev[nei] = u;
@@ -206,7 +263,7 @@ map<int, map<int, vector<int>>> Graph::all_shortest_paths() {
                     }
                     cur = prev[cur];
                 }
-                reverse(path.begin(), path.end());
+                //reverse(path.begin(), path.end());
                 all_paths[s][t] = path;
             }
         }
